@@ -1,5 +1,6 @@
 package com.peter.tanxuannewapp.domain;
 
+import com.peter.tanxuannewapp.util.JwtTokenUtil;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -43,4 +44,16 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "role_id")
     private Role role;
+
+    @PrePersist
+    public void handleBeforeCreate(){
+        this.createdAt = Instant.now();
+        this.createdBy = JwtTokenUtil.getCurrentUserLogin().orElse(null);
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate(){
+        this.updatedAt = Instant.now();
+        this.updatedBy = JwtTokenUtil.getCurrentUserLogin().orElse(null);
+    }
 }

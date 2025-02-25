@@ -1,13 +1,13 @@
 package com.peter.tanxuannewapp.domain;
 
 import com.peter.tanxuannewapp.type.CategoryStatusEnum;
+import com.peter.tanxuannewapp.util.JwtTokenUtil;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 
 import java.time.Instant;
 import java.util.List;
@@ -36,4 +36,21 @@ public class Category {
     private Instant updatedAt;
     private String createdBy;
     private String updatedBy;
+
+    @PrePersist
+    public void handleBeforeCreate() {
+        this.createdAt = Instant.now();
+        this.createdBy = JwtTokenUtil
+                .getCurrentUserLogin()
+                .orElse(null);
+    }
+
+    @PreUpdate
+    public void handleBeforeUpdate() {
+        this.updatedAt = Instant.now();
+        this.updatedBy = JwtTokenUtil
+                .getCurrentUserLogin()
+                .orElse(null);
+    }
+
 }
