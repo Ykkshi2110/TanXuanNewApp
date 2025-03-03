@@ -32,4 +32,10 @@ public class ResLoginDTO {
         private String email;
         private String name;
     }
+
+    @Getter
+    @Setter
+    public static class UserAccount{
+        private UserLogin user;
+    }
 }

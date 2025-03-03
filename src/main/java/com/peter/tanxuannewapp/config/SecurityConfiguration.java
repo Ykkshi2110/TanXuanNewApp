@@ -45,7 +45,7 @@ public class SecurityConfiguration {
     public SecurityFilterChain securityFilterChain(HttpSecurity http, CustomAuthenticationEntryPoint entryPoint) throws Exception {
         http
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh")
+                        .requestMatchers("/api/v1/login", "/api/v1/refresh", "/api/v1/register")
                         .permitAll()
                         .anyRequest()
                         .authenticated())

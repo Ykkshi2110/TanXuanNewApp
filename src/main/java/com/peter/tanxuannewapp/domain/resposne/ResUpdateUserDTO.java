@@ -7,12 +7,11 @@ import java.time.Instant;
 
 @Getter
 @Setter
-public class ResCreateUserDTO {
+public class ResUpdateUserDTO {
     private int id;
     private String name;
     private String email;
     private String address;
     private String phone;
-    private Instant createdAt;
-    private ResRoleDTO role;
+    private Instant updatedAt;
 }

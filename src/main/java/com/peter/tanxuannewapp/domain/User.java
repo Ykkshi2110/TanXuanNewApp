@@ -4,6 +4,7 @@ import com.peter.tanxuannewapp.util.JwtTokenUtil;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,6 +29,10 @@ public class User {
     @NotBlank(message = "Email must not be blank!")
     @Email(message = "Invalid Email!", regexp = "^[a-zA-Z0-9_!#$%&'*+/=?`{|}~^.-]+@[a-zA-Z0-9.-]+$")
     private String email;
+
+    @NotBlank(message = "Phone must not be blank!")
+    @Pattern(regexp = "^(0[35789])(\\d{8})$", message = "Invalid phone number!")
+    private String phone;
 
     @NotBlank(message = "Password must not be blank!")
     @Size(min = 12, message = "Password must be at least 12 character!")

@@ -4,19 +4,25 @@ import com.peter.tanxuannewapp.domain.User;
 import com.peter.tanxuannewapp.domain.annotation.ApiMessage;
 import com.peter.tanxuannewapp.domain.request.ReqLoginDTO;
 import com.peter.tanxuannewapp.domain.resposne.ResLoginDTO;
+import com.peter.tanxuannewapp.domain.resposne.ResUserDTO;
+import com.peter.tanxuannewapp.exception.ResourceAlreadyExistsException;
 import com.peter.tanxuannewapp.exception.ResourceNotFoundException;
+import com.peter.tanxuannewapp.repository.UserRepository;
 import com.peter.tanxuannewapp.service.UserService;
 import com.peter.tanxuannewapp.util.JwtTokenUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
@@ -27,9 +33,12 @@ import org.springframework.web.bind.annotation.*;
 @Transactional
 public class AuthController {
     private final UserService userService;
+    private final UserRepository userRepository;
     private final JwtTokenUtil jwtTokenUtil;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
     private static final String REFRESH_TOKEN = "refresh_token";
+    private final PasswordEncoder passwordEncoder;
+    private final ModelMapper modelMapper;
 
     @Value("${peterBui.jwt.refresh-token-validity-in-seconds}")
     private long refreshTokenValidityInSeconds;
@@ -37,7 +46,7 @@ public class AuthController {
     @Value("${peterBui.path.cookie}")
     private String pathCookie;
 
-    @PostMapping("/auth/login")
+    @PostMapping("/login")
     @ApiMessage("Login for user in company")
     public ResponseEntity<ResLoginDTO> loginForUserInCompany(@RequestBody @Valid ReqLoginDTO reqLoginDTO) {
         // input username and password into Security
@@ -82,7 +91,7 @@ public class AuthController {
                 .body(resLoginDTO);
     }
 
-    @GetMapping("/auth/refresh")
+    @GetMapping("/refresh")
     @ApiMessage("Refresh Token")
     public ResponseEntity<ResLoginDTO> renewRefreshToken(@CookieValue(value = REFRESH_TOKEN, defaultValue = "false") String refreshToken) {
         // check valid refreshToken
@@ -118,7 +127,7 @@ public class AuthController {
                 .body(resLoginDTO);
     }
 
-    @PostMapping("/auth/logout")
+    @PostMapping("/logout")
     @ApiMessage("Logout user")
     public ResponseEntity<Void> logout() {
         String email = JwtTokenUtil
@@ -143,7 +152,40 @@ public class AuthController {
                 .body(null);
     }
 
+    @PostMapping("/register")
+    @ApiMessage("Register")
+    public ResponseEntity<ResUserDTO> register(@RequestBody @Valid User userRegister) {
+        if (this.userService.checkEmailExists(userRegister.getEmail())) {
+            throw new ResourceAlreadyExistsException("Email already exists!");
+        }
 
+        User newUser = new User();
+        newUser.setEmail(userRegister.getEmail());
+        newUser.setPassword(this.passwordEncoder.encode(userRegister.getPassword()));
+        newUser.setName(userRegister.getName());
+        newUser.setAddress(userRegister.getAddress());
+        newUser.setPhone(userRegister.getPhone());
+        this.userRepository.save(newUser);
 
+        ResUserDTO userDTO = this.modelMapper.map(newUser, ResUserDTO.class);
+        return ResponseEntity
+                .status(HttpStatus.CREATED.value())
+                .body(userDTO);
+    }
+
+    @GetMapping("/account")
+    @ApiMessage("Get user account")
+    public ResponseEntity<ResLoginDTO.UserAccount> getUserAccount() {
+
+        User currentUserDB = this.userService.handleGetUserByEmail(JwtTokenUtil.getCurrentUserLogin().orElse(null));
+        ResLoginDTO.UserAccount userAccount = new ResLoginDTO.UserAccount();
+        if (currentUserDB != null) {
+            userAccount = this.modelMapper.map(currentUserDB, ResLoginDTO.UserAccount.class);
+        }
+
+        return ResponseEntity
+                .ok()
+                .body(userAccount);
+    }
 
 }
